@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="INI.cs" />
+    <Compile Include="Outfit\CheckList.cs" />
     <Compile Include="Outfit\Closet.cs" />
     <Compile Include="Outfit\Outfit.cs" />
     <Compile Include="Outfit\Set.cs" />

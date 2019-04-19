@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using BepInEx;
 using Manager;
 using Heroine = SaveData.Heroine;
 
@@ -19,8 +18,6 @@ namespace FashionSense
 			foreach (Heroine girl in game.HeroineList)
 				if (!girl.isTeacher)
 					girls.Add(new Girl(girl));
-
-			Outfit.Closet.Compile_OriginalList();
 		}
 
 		public static void Decompile(UnityEngine.SceneManagement.Scene scene)
@@ -50,7 +47,7 @@ namespace FashionSense
 			if (!girl.Initialized)
 				girl.ChangeOutfit();
 			
-			if (Root._locations.Contains(girl.data.charaBase.mapNo))
+			if (Root.Locations.Contains(girl.data.charaBase.mapNo))
 			{
 				if (!girl.justChanged)
 				{

@@ -1,11 +1,11 @@
-﻿using BepInEx;
-
 namespace FashionSense
 {
 	public class Girl
 	{
-		public SaveData.CharaData data;
-		public ChaFileCoordinate[] coordinate;
+		public readonly SaveData.CharaData data;
+		public readonly ChaFileCoordinate[] coordinate;
+		public readonly ChaFileCustom custom;
+		public readonly System.Version loadVersion;
 		public bool justChanged;
 		public bool Initialized { get; private set; }
 		public ChaFile ChaFile { get; private set; }
@@ -17,13 +17,17 @@ namespace FashionSense
 			justChanged = false;
 			Initialized = false;
 
-			var coordinate = data.charFile.coordinate;
-			var len = coordinate.Length;
-			
-			this.coordinate = new ChaFileCoordinate[len];
+			var charFile = data.charFile;
 
-			for (int i = 0; i < len; i++)
-				this.coordinate[i] = coordinate[i];
+			coordinate = Util.Array.Replace(new ChaFileCoordinate[charFile.coordinate.Length], i =>
+			{
+				var v = new ChaFileCoordinate();
+				v.LoadBytes(charFile.coordinate[i].SaveBytes(), charFile.loadVersion);
+				return v;
+			});
+			custom = new ChaFileCustom();
+			custom.LoadBytes(charFile.custom.SaveBytes(), charFile.loadVersion);
+			loadVersion = charFile.loadVersion;
 		}
 
 		public bool ChangeOutfit(bool reset = false)
@@ -46,7 +50,8 @@ namespace FashionSense
 			if (CharaBase == null)
 				CharaBase = data.charaBase;
 
-			ChaFileCoordinate[] coordinate = null;
+			ChaFileCoordinate[] coordinate;
+			ChaFileCustom custom;
 
 			if (!reset)
 			{
@@ -55,14 +60,28 @@ namespace FashionSense
 				if (dummy == null)
 					return false;
 
-				coordinate = dummy.coordinate;
+				coordinate = Util.Array.Replace(new ChaFileCoordinate[dummy.coordinate.Length], i =>
+				{
+					var v = new ChaFileCoordinate();
+					v.LoadBytes(dummy.coordinate[i].SaveBytes(), dummy.loadVersion);
+					return v;
+				});
+				custom = new ChaFileCustom();
+				custom.LoadBytes(dummy.custom.SaveBytes(), dummy.loadVersion);
 			}
 			else
+			{
 				coordinate = this.coordinate;
+				custom = this.custom;
+			}
 
 			ChaFile.coordinate = coordinate;
+			ChaFile.custom = custom;
 
 			// Reload Overworld Model
+
+			//data.chaCtrl.Reload();
+			data.chaCtrl.ChangeHair(true);
 			CharaBase.ChangeNowCoordinate();
 
 			return true;

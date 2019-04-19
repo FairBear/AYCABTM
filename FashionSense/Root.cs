@@ -12,9 +12,9 @@ namespace FashionSense
 		public const string GUID = "com.fairbear.bepinex.fashionsense";
 		public const string PluginName = "Fashion Sense";
 		public const string PluginNameInternal = "FashionSense";
-		public const string Version = "1.0";
+		public const string Version = "2.1";
 
-		public static HashSet<int> _locations { get; set; }
+		public static HashSet<int> Locations { get; set; }
 
 		void SceneManager_sceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
 		{
@@ -37,10 +37,10 @@ namespace FashionSense
 		{
 			// locations
 
-			_locations = new HashSet<int>();
+			Locations = new HashSet<int>();
 			
 			foreach (int i in Enum.GetValues(typeof(Place)))
-				_locations.Add(i);
+				Locations.Add(i);
 
 			Outfit.Closet.Compile();
 		}

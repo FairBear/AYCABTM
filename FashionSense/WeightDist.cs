@@ -17,7 +17,7 @@ namespace FashionSense
 			var rand = random.NextDouble() * maxWeight;
 			float n = 0;
 
-			foreach (var item in list)
+			foreach (T item in list)
 				if (rand < (n += weight(item)))
 					return item;
 
@@ -29,15 +29,15 @@ namespace FashionSense
 			resultList = new HashSet<T>();
 			resultMaxWeight = 0;
 
-			foreach (var item in list)
+			foreach (T item in list)
 			{
-				if (blackList != null && blackList.Count > 0 && blackList.Contains(subject) ||
-					whiteList != null && whiteList.Count > 0 && !whiteList.Contains(subject))
+				if (blackList != null && blackList.Contains(subject) ||
+					whiteList != null && !whiteList.Contains(subject))
 					continue;
 
 				var n = weight(item);
 
-				if (n == 0)
+				if (n <= 0)
 					continue;
 
 				resultMaxWeight += n;

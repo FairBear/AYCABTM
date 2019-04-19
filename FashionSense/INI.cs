@@ -7,7 +7,7 @@ namespace FashionSense
 {
 	public class INI
 	{
-		private Dictionary<string, Dictionary<string, string>> list;
+		private readonly Dictionary<string, Dictionary<string, string>> list;
 		private readonly bool caseSensitive;
 
 		public INI(string path = null, bool caseSensitive = true)
@@ -67,6 +67,15 @@ namespace FashionSense
 				key = key.ToLower();
 
 			return list[section].ContainsKey(key);
+		}
+
+		public string TryKeys(string section, string[] keys)
+		{
+			foreach (var key in keys)
+				if (Has(section, key))
+					return key;
+
+			return keys.FirstOrDefault();
 		}
 
 		public bool Add(string section)
@@ -187,14 +196,13 @@ namespace FashionSense
 				value = value.Substring(1, value.Length - 2);
 
 			var list = new List<bool>();
-			var items = value.Split(',');
 
 			foreach (var item in value.Split(','))
 			{
 				item.Trim();
 
-				Util.String.Parse(item, out bool result);
-				list.Add(result);
+				if (Util.String.Parse(item, out bool result))
+					list.Add(result);
 			}
 
 			return list;
@@ -231,8 +239,8 @@ namespace FashionSense
 				section = section.ToLower();
 
 			if (!list.ContainsKey(section))
-				return null;
-
+				return new string[0];
+			
 			list.TryGetValue(section, out var result);
 
 			return result.Keys.ToArray();

@@ -1,5 +1,4 @@
-﻿using BepInEx;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,67 +8,26 @@ namespace FashionSense.Outfit
 {
 	static class Closet
 	{
-		private static HashSet<Tuple<string, float, HashSet<Set>>> cache = new HashSet<Tuple<string, float, HashSet<Set>>>();
+		private static readonly HashSet<Tuple<string, float, HashSet<Set>>> cache = new HashSet<Tuple<string, float, HashSet<Set>>>();
 		// Contains all the sets.
-		private static HashSet<Set> SetList = new HashSet<Set>();
+		private static readonly HashSet<Set> SetList = new HashSet<Set>();
 		// Contains only the combo sets.
-		private static HashSet<Set> ComboSetList = new HashSet<Set>();
+		private static readonly HashSet<Set> ComboSetList = new HashSet<Set>();
 		// The original outfits of all the girls in the classroom.
 		private static Set OriginalList;
 		// The INI configuration file for the original outfits.
 		private static INI OriginalConfig;
 		private static float SetMaxWeight = 0;
-		private static float ComboSetMaxWeight = 0;
 
 		private static ChaFileControl LoadFile(string path)
 		{
 			if (Path.GetExtension(path) != ".png")
 				return null;
 
-			var ChaFile = new ChaFileControl();
-
-			ChaFile.LoadFileLimited(path);
+			var ChaFile = SimpleSingleton<ChaFileControl>.Instance;
+			ChaFile.LoadFileLimited(path, parameter: false);
 
 			return ChaFile;
-		}
-
-		private static bool[] GetBoolList(INI config, string section, string valueAllKey, string[] key, bool[] defaultValue, bool defaultValueAll)
-		{
-			var list = new bool[key.Length];
-			var valueAllExists = config.Has(section, valueAllKey);
-
-			if (valueAllExists)
-				defaultValueAll = config.GetBool(section, valueAllKey, defaultValueAll);
-
-			for (int i = 0; i < list.Length; i++)
-				list[i] = config.GetBool(section, key[i], valueAllExists ? defaultValueAll : defaultValue[i]);
-
-			return list;
-		}
-
-		private static bool[] GetBoolList(INI config, string rule_section, string outfit_section, string valueAllKey, string[] key, bool[] defaultValue, bool defaultValueAll)
-		{
-			return GetBoolList(
-				config,
-				outfit_section,
-				valueAllKey,
-				key,
-				GetBoolList(config, rule_section, valueAllKey, key, defaultValue, defaultValueAll),
-				config.GetBool(rule_section, valueAllKey, defaultValueAll)
-			);
-		}
-
-		private static List<string> GetStringList(INI config, string rule_section, string outfit_section, string key, List<string> defaultValue = null)
-		{
-			return config.GetStringList(
-				outfit_section,
-				key,
-				config.GetStringList(
-					rule_section,
-					key,
-					defaultValue
-				)
-			);
 		}
 
 		private static HashSet<string> GetStringHashSet(INI config, string rule_section, string outfit_section, string key, HashSet<string> defaultValue = null)
@@ -98,19 +56,6 @@ namespace FashionSense.Outfit
 			);
 		}
 
-		private static bool GetBool(INI config, string rule_section, string outfit_section, string key, bool defaultValue)
-		{
-			return config.GetBool(
-				outfit_section,
-				key,
-				config.GetBool(
-					rule_section,
-					key,
-					defaultValue
-				)
-			);
-		}
-
 		// For processing black lists and white lists.
 		public static Func<T, float> FilterFunc<T>(string subject, Func<T, float> weightFunc, Func<T, HashSet<string>> blackListFunc, Func<T, HashSet<string>> whiteListFunc)
 		{
@@ -119,8 +64,8 @@ namespace FashionSense.Outfit
 				var blackList = blackListFunc(v);
 				var whiteList = whiteListFunc(v);
 
-				if (blackList != null && blackList.Count > 0 && blackList.Contains(subject) ||
-					whiteList != null && whiteList.Count > 0 && !whiteList.Contains(subject))
+				if (blackList != null && blackList.Contains(subject) ||
+					whiteList != null && !whiteList.Contains(subject))
 					return 0;
 
 				return weightFunc(v);
@@ -143,37 +88,12 @@ namespace FashionSense.Outfit
 				GetStringHashSet(config, "rule", name, "whitelist");
 
 			return new Outfit(
-				ChaFile,
+				original ? null : ChaFile,
 				weight,
-				GetBoolList(config, "rule", name, "coordinate", KEY.COORDINATE, DEFAULT.COORDINATE, DEFAULT.COORDINATEALL),
-				GetBoolList(config, "rule", name, "clothes", KEY.CLOTHES, DEFAULT.CLOTHES, DEFAULT.CLOTHESALL),
-				GetBoolList(config, "rule", name, "subclothes", KEY.SUBCLOTHES, DEFAULT.SUBCLOTHES, DEFAULT.SUBCLOTHESALL),
-				GetBoolList(config, "rule", name, "accessories", KEY.ACCESSORIES, DEFAULT.ACCESSORIES, DEFAULT.ACCESSORIESALL),
-				GetBoolList(config, "rule", name, "replaceaccessories", KEY.REPLACEACCESSORIES, DEFAULT.REPLACEACCESSORIES, DEFAULT.REPLACEACCESSORIESALL),
-				GetBoolList(config, "rule", name, "replaceclothes", KEY.REPLACECLOTHES, DEFAULT.REPLACECLOTHES, DEFAULT.REPLACECLOTHESALL),
-				GetBool(config, "rule", name, "schooluniformallcoordinates", DEFAULT.SCHOOLUNIFORMALLCOORDINATES),
+				original ? null : CheckList.ChaFile.FromINI(config, "rule", name),
 				blackList,
 				whiteList
 			);
-		}
-
-		public static void Compile_OriginalList()
-		{
-			if (OriginalConfig == null)
-				return;
-
-			cache.Clear();
-			OriginalList.Clear();
-
-			foreach (var girl in GirlList.girls)
-			{
-				var outfit = GenerateOutfit(girl.data.charFile, OriginalConfig, girl.data.Name, true);
-
-				if (outfit == null)
-					continue;
-
-				OriginalList.Add(outfit);
-			}
 		}
 
 		private static Set Compile_Set(string path, INI config)
@@ -234,7 +154,7 @@ namespace FashionSense.Outfit
 
 					if (!Directory.Exists(path))
 						continue;
-					
+
 					var set = Compile_Combo_Parse(root_config, path);
 
 					if (set != null)
@@ -260,7 +180,6 @@ namespace FashionSense.Outfit
 			}
 
 			SetMaxWeight += root_set.Weight;
-			ComboSetMaxWeight += root_set.Weight;
 			SetList.Add(root_set);
 			ComboSetList.Add(root_set);
 		}
@@ -277,8 +196,6 @@ namespace FashionSense.Outfit
 					break;
 			}
 
-			Logger.Log(BepInEx.Logging.LogLevel.Message, $"Got {root_path}");
-
 			if (!Directory.Exists(root_path))
 				return;
 
@@ -288,14 +205,18 @@ namespace FashionSense.Outfit
 			// Setup original outfits.
 
 			OriginalConfig = new INI(root_path + "\\original.ini", false);
-			OriginalList = Set.FromINI(OriginalConfig);
+			OriginalList = new Set(
+				OriginalConfig.GetFloat("general", "weight", DEFAULT.WEIGHT),
+				OriginalConfig.GetStringHashSet("general", "blacklist"),
+				OriginalConfig.GetStringHashSet("general", "whitelist")
+			);
 			
-			if (OriginalList != null)
+			if (OriginalList != null && OriginalList.Weight > 0)
 			{
 				SetMaxWeight += OriginalList.Weight;
 				SetList.Add(OriginalList);
 			}
-			
+
 
 			// Get all the folders.
 
@@ -316,22 +237,20 @@ namespace FashionSense.Outfit
 				else
 					Compile_Combo(path, config);
 			}
-			
-			Roll(new ChaFileControl());
 		}
 
 		public static void Apply(ChaFileControl ChaFile, int kind, List<Outfit> outfits)
 		{
 			if (outfits != null)
 				foreach (var outfit in outfits)
-					outfit.Apply(kind, ChaFile);
+					outfit.Apply(ChaFile, kind);
 		}
 
 		public static Set Roll(HashSet<Set> list, float maxWeight, string subject = null)
 		{
 			if (subject == null)
 				return WeightDist.Roll(list, v => v.Weight, maxWeight);
-			
+
 			var tuple = cache.FirstOrDefault(v => v.Item1 == subject);
 
 			if (tuple.Item1 != null)
@@ -341,7 +260,7 @@ namespace FashionSense.Outfit
 				list,
 				FilterFunc<Set>(
 					subject,
-					v => v.IsEmpty(subject) ? 0 : v.Weight,
+					v => v.IsEmpty(subject) && v != OriginalList ? 0 : v.Weight,
 					v => v.blackList,
 					v => v.whiteList
 				),
@@ -349,7 +268,7 @@ namespace FashionSense.Outfit
 				out var resultList,
 				out var resultMaxWeight
 			);
-			
+
 			cache.Add(new Tuple<string, float, HashSet<Set>>(subject, resultMaxWeight, resultList));
 
 			return WeightDist.Roll(resultList, v => v.Weight, resultMaxWeight);
@@ -359,24 +278,27 @@ namespace FashionSense.Outfit
 		{
 			if (SetMaxWeight <= 0)
 				return null;
-			
+
 			// Roll for a random set.
 			var set = Roll(SetList, SetMaxWeight, subject);
-			
+
 			// There's nothing available in the list.
 			if (set == null)
 				return null;
-			
+
+			if (set == OriginalList)
+				return ChaFile;
+
 			var outfits = set.Roll(subject);
 			Apply(ChaFile, 0, outfits);
-			
+
 			if (set.Next == null)
 				// Apply all the coordinates of the set if not a combo-type.
-				for (int i = 1; i < KEY.COORDINATE.Length; i++)
+				for (int i = 1; i < ChaFile.coordinate.Length; i++)
 					Apply(ChaFile, i, outfits);
 			else
 				// Only roll outfits within the current folder.
-				for (int i = 1; i < KEY.COORDINATE.Length; i++)
+				for (int i = 1; i < ChaFile.coordinate.Length; i++)
 					Apply(ChaFile, i, set.Roll(subject));
 
 			return ChaFile;
@@ -387,11 +309,12 @@ namespace FashionSense.Outfit
 			if (girl.ChaFile == null)
 				return null;
 			
-			var ChaFile = new ChaFileControl();
-			ChaFile.CopyAll(girl.ChaFile);
+			var ChaFile = SimpleSingleton<ChaFileControl>.Instance;
+			ChaFile.CopyCoordinate(girl.coordinate);
+			ChaFile.CopyCustom(girl.custom);
 
-			return Roll(ChaFile);
-			//return Roll(ChaFile, girl.data.Name);
+			//return Roll(ChaFile);
+			return Roll(ChaFile, girl.data.Name);
 		}
 	}
 }

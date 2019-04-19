@@ -1,7 +1,5 @@
-﻿using BepInEx;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace FashionSense
 {
@@ -20,6 +18,47 @@ namespace FashionSense
 			typeof(double),
 			typeof(float)
 		};
+
+		public static class Array
+		{
+			public static void Loop(int length, Action<int> act)
+			{
+				for (int i = 0; i < length; i++)
+					act(i);
+			}
+
+			public static T[] Loop<T>(T[] arr, Action<int> act)
+			{
+				for (int i = 0; i < arr.Length; i++)
+					act(i);
+
+				return arr;
+			}
+
+			public static T[] Loop<T>(T[] arr, Action<T> act)
+			{
+				for (int i = 0; i < arr.Length; i++)
+					act(arr[i]);
+
+				return arr;
+			}
+
+			public static T[] Loop<T>(T[] arr, Action<int, T> act)
+			{
+				for (int i = 0; i < arr.Length; i++)
+					act(i, arr[i]);
+
+				return arr;
+			}
+
+			public static T[] Replace<T>(T[] arr, Func<int, T> func)
+			{
+				for (int i = 0; i < arr.Length; i++)
+					arr[i] = func(i);
+
+				return arr;
+			}
+		}
 
 		public static class String
 		{
@@ -91,13 +130,27 @@ namespace FashionSense
 
 				if (bool.TryParse(value, out result))
 					return true;
-				else if (float.TryParse(value, out var result1))
+
+				if (float.TryParse(value, out var result1))
 				{
 					result = result1 != 0;
 					return true;
 				}
 
 				return false;
+			}
+
+			public static string Trim(string value, int a = 1, int b = -1)
+			{
+				if (value.Length == 0)
+					return value;
+
+				b = b < 0 ? a : b;
+
+				if (value.Length < a + b)
+					return "";
+
+				return value.Substring(a, value.Length - b - a);
 			}
 		}
 	}

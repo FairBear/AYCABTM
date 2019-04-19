@@ -6,8 +6,8 @@ namespace FashionSense.Outfit
 {
 	public class Set
 	{
-		private HashSet<Tuple<string, float, HashSet<Outfit>>> cache; // Combinations of lists for each girl.
-		private HashSet<Outfit> Values;
+		private readonly HashSet<Tuple<string, float, HashSet<Outfit>>> cache; // Combinations of lists for each girl.
+		private readonly HashSet<Outfit> Values;
 		public Set Next = null;
 		public float Weight { get; private set; } // How likely will this be chosen.
 		public float MaxWeight { get; private set; } = 0; // Total weight of all the values.
@@ -56,18 +56,26 @@ namespace FashionSense.Outfit
 
 		public bool IsEmpty(string subject = null)
 		{
-			Filter(out var Values, out var MaxWeight, subject);
+			var set = this;
+			float MaxWeight = 0;
+
+			while (set != null && MaxWeight <= 0)
+			{
+				set.Filter(out var _, out MaxWeight, subject);
+				set = set.Next;
+			}
 
 			return MaxWeight <= 0;
 		}
 
 		private void Filter(out HashSet<Outfit> Values, out float MaxWeight, string subject = null)
 		{
-			Values = this.Values;
-			MaxWeight = this.MaxWeight;
-
-			if (Values.Count == 0 || subject == null)
+			if (this.Values.Count == 0 || subject == null)
+			{
+				Values = this.Values;
+				MaxWeight = this.MaxWeight;
 				return;
+			}
 
 			var tuple = cache.FirstOrDefault(v => v.Item1 == subject);
 
