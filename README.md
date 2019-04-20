@@ -12,7 +12,7 @@ the `Example` folder and extract the `FashionSense` folder in the `Koikatu\UserD
 3. **(Recommended)** Replace the `Character Cards` inside with yours or just add more for diversity.
 
 ## What is this?
-[![](https://raw.githubusercontent.com/FairBear/AYCABTM/master/Assets/Preview0.png)](#)
+![](https://raw.githubusercontent.com/FairBear/AYCABTM/master/Assets/Preview0.png)
 
 This plugin allows you to have your characters to randomly choose an outfit inside the `FashionSense` folder that must be found
 in the `Koikatu\UserData` folder.
