@@ -1,6 +1,6 @@
 # Fashion Sense
 ## Note
-This mod is abandoned due to not having enough time and effort to continue the development. You are free to take the the mod's code however you like.
+~~This mod is abandoned due to not having enough time and effort to continue the development. You are free to take the the mod's code however you like.~~ A rework of this mod can be found [here](https://github.com/FairBear/KK_Wardrobe).
 
 ## Requirements
 * [BepInEx](https://github.com/BepInEx/BepInEx/releases)
